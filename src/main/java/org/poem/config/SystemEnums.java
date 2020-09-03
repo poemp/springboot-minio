@@ -1,13 +1,9 @@
 package org.poem.config;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-
 /**
  * Created by wei cao on 2020/8/11 9:38
+ * @author Administrator
  */
-@Getter
-@AllArgsConstructor
 public enum SystemEnums {
     SUCCESS("success", "00000"),
     FAIL("fail","00001"),
@@ -29,4 +25,25 @@ public enum SystemEnums {
     ;
     private String msg;
     private String code;
+
+    public String getMsg() {
+        return msg;
+    }
+
+    public void setMsg(String msg) {
+        this.msg = msg;
+    }
+
+    public String getCode() {
+        return code;
+    }
+
+    public void setCode(String code) {
+        this.code = code;
+    }
+
+    SystemEnums(String msg, String code) {
+        this.msg = msg;
+        this.code = code;
+    }
 }

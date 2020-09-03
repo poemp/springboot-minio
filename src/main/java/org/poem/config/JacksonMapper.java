@@ -12,7 +12,7 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer;
 import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
-import com.xyidc.config.jackson.BeanSerializerModifier;
+import org.poem.config.jackson.BeanSerializerModifier;
 
 import java.time.LocalDateTime;
 import java.util.TimeZone;

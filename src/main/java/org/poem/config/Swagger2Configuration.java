@@ -12,12 +12,13 @@ import springfox.documentation.spi.DocumentationType;
 import springfox.documentation.spring.web.plugins.Docket;
 import springfox.documentation.swagger2.annotations.EnableSwagger2;
 
+/**
+ * @author Administrator
+ */
 @Configuration
 @EnableSwagger2
 public class Swagger2Configuration {
 
-    @Value("${swagger.enable}")
-    private boolean enableSwagger;
 
     @Bean
     public Docket buildDocket() {
@@ -30,8 +31,7 @@ public class Swagger2Configuration {
                 .apis(RequestHandlerSelectors.basePackage("org.poem"))
                 .paths(PathSelectors.any())
                 .build()
-                .apiInfo(buildApiInf())
-                .enable(enableSwagger);
+                .apiInfo(buildApiInf()) ;
     }
 
     private ApiInfo buildApiInf() {
