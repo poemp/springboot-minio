@@ -1,6 +1,7 @@
 package org.poem.controller;
 
 
+import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.RandomStringUtils;
@@ -34,6 +35,7 @@ import java.util.List;
 /**
  * @author sangfor
  */
+@Api(tags = "文件上传管理")
 @RestController
 @RequestMapping("/v1/file")
 public class FileController {
@@ -42,7 +44,7 @@ public class FileController {
     @Autowired
     private MinioService minioService;
 
-
+    @ApiOperation(value = "0101_文件下载", notes = "上传文件", httpMethod = "POST")
     @RequestMapping(value = "/download/{fileId}", method = RequestMethod.GET)
     @ResponseBody
     public ResponseEntity<byte[]> downloadImage(@PathVariable("fileId") String fileId) {
