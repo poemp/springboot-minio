@@ -18,6 +18,7 @@ package org.poem;
 
 import io.minio.MinioClient;
 import io.minio.errors.*;
+import org.poem.config.MinioConfigurationProperties;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.actuate.autoconfigure.web.server.ManagementContextAutoConfiguration;
 import org.springframework.boot.actuate.health.Health;
@@ -62,7 +63,7 @@ public class MinioHealthIndicator implements HealthIndicator {
                         .withDetail("bucketName", minioConfigurationProperties.getBucket())
                         .build();
             }
-        } catch (InvalidBucketNameException | IOException | NoSuchAlgorithmException | InsufficientDataException | InvalidKeyException  | XmlParserException | ErrorResponseException | InternalException | InvalidResponseException e) {
+        } catch (InvalidBucketNameException | IOException | NoSuchAlgorithmException | InsufficientDataException | InvalidKeyException | XmlParserException | ErrorResponseException | InternalException | InvalidResponseException | ServerException e) {
             return Health.down(e)
                     .withDetail("bucketName", minioConfigurationProperties.getBucket())
                     .build();

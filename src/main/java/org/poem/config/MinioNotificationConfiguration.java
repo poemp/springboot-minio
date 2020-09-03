@@ -14,7 +14,7 @@
  *  limitations under the License.
  */
 
-package org.poem;
+package org.poem.config;
 
 
 import io.minio.CloseableIterator;
@@ -101,7 +101,7 @@ public class MinioNotificationConfiguration implements ApplicationContextAware {
 
                                     }
                                 };
-                            } catch (InvalidBucketNameException | InternalException | ErrorResponseException | XmlParserException | InvalidKeyException | IOException | InsufficientDataException | NoSuchAlgorithmException | InvalidResponseException e) {
+                            } catch (InvalidBucketNameException | InternalException | ErrorResponseException | XmlParserException | InvalidKeyException | IOException | InsufficientDataException | NoSuchAlgorithmException | InvalidResponseException | ServerException e) {
                                 LOGGER.error("Error while registering notification for method {} with notification {}", m.getName(), Arrays.toString(annotation.value()));
                                 LOGGER.error("Exception is", e);
                                 throw new IllegalStateException("Cannot register handler", e);

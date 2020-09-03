@@ -14,7 +14,7 @@
  *  limitations under the License.
  */
 
-package org.poem;
+package org.poem.config;
 
 
 import io.micrometer.core.instrument.MeterRegistry;
@@ -25,7 +25,7 @@ import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.actuate.autoconfigure.health.ConditionalOnEnabledHealthIndicator;
-import org.springframework.boot.actuate.autoconfigure.health.HealthIndicatorAutoConfiguration;
+import org.springframework.boot.actuate.autoconfigure.health.HealthContributorAutoConfiguration;
 import org.springframework.boot.actuate.autoconfigure.web.server.ManagementContextAutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
@@ -36,11 +36,14 @@ import org.springframework.context.annotation.Configuration;
 import javax.annotation.PostConstruct;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * @author Administrator
+ */
 @Aspect
 @Configuration
 @ConditionalOnClass({MinioClient.class, ManagementContextAutoConfiguration.class})
 @ConditionalOnEnabledHealthIndicator("minio")
-@AutoConfigureBefore(HealthIndicatorAutoConfiguration.class)
+@AutoConfigureBefore(HealthContributorAutoConfiguration.class)
 @AutoConfigureAfter(MinioConfiguration.class)
 public class MinioMetricConfiguration {
 

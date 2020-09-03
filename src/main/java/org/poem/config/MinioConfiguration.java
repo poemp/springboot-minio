@@ -14,7 +14,7 @@
  *  limitations under the License.
  */
 
-package org.poem;
+package org.poem.config;
 
 import io.minio.MinioClient;
 import io.minio.errors.*;
@@ -47,7 +47,7 @@ public class MinioConfiguration {
     private MinioConfigurationProperties minioConfigurationProperties;
 
     @Bean
-    public MinioClient minioClient() throws InvalidEndpointException, InvalidPortException, IOException, InvalidKeyException, NoSuchAlgorithmException, InsufficientDataException, InternalException, InvalidBucketNameException, XmlPullParserException, ErrorResponseException, InvalidResponseException, org.poem.excception.MinioException, XmlParserException {
+    public MinioClient minioClient() throws IOException, InvalidKeyException, NoSuchAlgorithmException, InsufficientDataException, InternalException, InvalidBucketNameException, ErrorResponseException, InvalidResponseException, org.poem.excception.MinioException, XmlParserException, ServerException {
 
         MinioClient minioClient;
         if(!configuredProxy()) {
@@ -91,7 +91,7 @@ public class MinioConfiguration {
                     }
                 }
             } catch
-            (InvalidBucketNameException | NoSuchAlgorithmException | InsufficientDataException | IOException | InvalidKeyException  | ErrorResponseException | InternalException | InvalidResponseException | MinioException | XmlParserException
+            (InvalidBucketNameException | NoSuchAlgorithmException | InsufficientDataException | IOException | InvalidKeyException | ErrorResponseException | InternalException | InvalidResponseException | MinioException | XmlParserException | ServerException
                     e) {
                 LOGGER.error("Error while checking bucket", e);
                 throw e;
@@ -111,8 +111,9 @@ public class MinioConfiguration {
         String httpPort = System.getProperty("http.proxyPort");
 
         OkHttpClient.Builder builder = new OkHttpClient.Builder();
-        if(httpHost!=null)
+        if(httpHost!=null) {
             builder.proxy(new Proxy(Proxy.Type.HTTP, new InetSocketAddress(httpHost,Integer.parseInt(httpPort))));
+        }
         return builder
                 .build();
     }

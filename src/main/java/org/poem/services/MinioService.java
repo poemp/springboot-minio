@@ -14,15 +14,13 @@
  *  limitations under the License.
  */
 
-package org.poem;
+package org.poem.services;
 
 
-import io.minio.MinioClient;
-import io.minio.ObjectStat;
-import io.minio.PutObjectOptions;
-import io.minio.Result;
+import io.minio.*;
 import io.minio.errors.*;
 import io.minio.messages.Item;
+import org.poem.config.MinioConfigurationProperties;
 import org.poem.excception.MinioException;
 import org.poem.excception.MinioFetchException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,6 +33,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+import java.util.AbstractMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -48,8 +47,8 @@ import java.util.stream.StreamSupport;
  * The bucket name is provided with the one defined in the configuration properties.
  *
  * @author Jordan LEFEBURE
- *
- *
+ * <p>
+ * <p>
  * This service adapetd with minio sdk 7.0.x
  * @author Mostafa Jalambadani
  */
@@ -67,7 +66,7 @@ public class MinioService {
      *
      * @return List of items
      */
-    public List<Item> list() {
+    public List<Item> listBucketObjects() {
         Iterable<Result<Item>> myObjects = minioClient.listObjects(configurationProperties.getBucket(), "", false);
         return getItems(myObjects);
     }
@@ -78,11 +77,11 @@ public class MinioService {
      * @return List of items
      * @throws org.poem.excception.MinioException if an error occur while fetch list
      */
-    public List<Item> fullList() throws  MinioException {
+    public List<Item> fullList() throws MinioException {
         try {
             Iterable<Result<Item>> myObjects = minioClient.listObjects(configurationProperties.getBucket());
             return getItems(myObjects);
-        } catch (  XmlParserException e) {
+        } catch (XmlParserException e) {
             throw new org.poem.excception.MinioException("Error while fetching files in Minio", e);
         }
     }
@@ -125,23 +124,15 @@ public class MinioService {
      */
     private List<Item> getItems(Iterable<Result<Item>> myObjects) {
         return StreamSupport
-            .stream(myObjects.spliterator(), true)
-            .map(itemResult -> {
-                try {
-                    return itemResult.get();
-                } catch (InvalidBucketNameException |
-                    NoSuchAlgorithmException |
-                    InsufficientDataException |
-                    IOException |
-                    InvalidKeyException |
-                        XmlParserException |
-                        InvalidResponseException|
-                    ErrorResponseException |
-                    InternalException e) {
-                    throw new MinioFetchException("Error while parsing list of objects", e);
-                } 
-            })
-            .collect(Collectors.toList());
+                .stream(myObjects.spliterator(), true)
+                .map(itemResult -> {
+                    try {
+                        return itemResult.get();
+                    } catch (InvalidBucketNameException | NoSuchAlgorithmException | InsufficientDataException | IOException | InvalidKeyException | XmlParserException | InvalidResponseException | ErrorResponseException | InternalException | ServerException e) {
+                        throw new MinioFetchException("Error while parsing list of objects", e);
+                    }
+                })
+                .collect(Collectors.toList());
     }
 
     /**
@@ -153,8 +144,9 @@ public class MinioService {
      */
     public InputStream get(Path path) throws org.poem.excception.MinioException {
         try {
-            return minioClient.getObject(configurationProperties.getBucket(), path.toString());
-        } catch (XmlParserException | InvalidBucketNameException | NoSuchAlgorithmException | InsufficientDataException | IOException | InvalidKeyException  | ErrorResponseException | InternalException  | InvalidResponseException e) {
+            return minioClient.getObject(GetObjectArgs.builder().bucket(configurationProperties.getBucket()).object(path.toString()).build());
+//            return minioClient.getObject(configurationProperties.getBucket(), path.toString());
+        } catch (XmlParserException | InvalidBucketNameException | NoSuchAlgorithmException | InsufficientDataException | IOException | InvalidKeyException | ErrorResponseException | InternalException | InvalidResponseException | ServerException e) {
             throw new org.poem.excception.MinioException("Error while fetching files in Minio", e);
         }
     }
@@ -168,8 +160,9 @@ public class MinioService {
      */
     public ObjectStat getMetadata(Path path) throws org.poem.excception.MinioException {
         try {
-            return minioClient.statObject(configurationProperties.getBucket(), path.toString());
-        } catch (XmlParserException | InvalidBucketNameException | NoSuchAlgorithmException | InsufficientDataException | IOException | InvalidKeyException |  ErrorResponseException | InternalException  | InvalidResponseException e) {
+            return minioClient.statObject(StatObjectArgs.builder().bucket(configurationProperties.getBucket()).object(path.toString()).build());
+//            return minioClient.statObject(configurationProperties.getBucket(), path.toString());
+        } catch (XmlParserException | InvalidBucketNameException | NoSuchAlgorithmException | InsufficientDataException | IOException | InvalidKeyException | ErrorResponseException | InternalException | InvalidResponseException | ServerException e) {
             throw new org.poem.excception.MinioException("Error while fetching files in Minio", e);
         }
     }
@@ -182,14 +175,16 @@ public class MinioService {
      */
     public Map<Path, ObjectStat> getMetadata(Iterable<Path> paths) {
         return StreamSupport.stream(paths.spliterator(), false)
-            .map(path -> {
-                try {
-                    return new HashMap.SimpleEntry<>(path, minioClient.statObject(configurationProperties.getBucket(), path.toString()));
-                } catch (InvalidBucketNameException | NoSuchAlgorithmException | InsufficientDataException | IOException | InvalidKeyException |  XmlParserException | ErrorResponseException | InternalException | InvalidResponseException  e) {
-                    throw new MinioFetchException("Error while parsing list of objects", e);
-                }
-            })
-            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+                .map(path -> {
+                    try {
+                        ObjectStat statObject = minioClient.statObject(StatObjectArgs.builder().bucket(configurationProperties.getBucket()).object(path.toString()).build());
+//                    ObjectStat statObject = minioClient.statObject(configurationProperties.getBucket(), path.toString());
+                        return new HashMap.SimpleEntry<>(path, statObject);
+                    } catch (InvalidBucketNameException | NoSuchAlgorithmException | InsufficientDataException | IOException | InvalidKeyException | XmlParserException | ErrorResponseException | InternalException | InvalidResponseException | ServerException e) {
+                        throw new MinioFetchException("Error while parsing list of objects", e);
+                    }
+                })
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 
     /**
@@ -201,8 +196,8 @@ public class MinioService {
      */
     public void getAndSave(Path source, String fileName) throws org.poem.excception.MinioException {
         try {
-            minioClient.getObject(configurationProperties.getBucket(), source.toString(), fileName);
-        } catch (XmlParserException | InvalidBucketNameException | NoSuchAlgorithmException | InsufficientDataException | IOException | InvalidKeyException |  ErrorResponseException | InternalException  | InvalidResponseException e) {
+            minioClient.getObject(GetObjectArgs.builder().bucket(configurationProperties.getBucket()).object(source.toString() + "/" + fileName).build());
+        } catch (XmlParserException | InvalidBucketNameException | NoSuchAlgorithmException | InsufficientDataException | IOException | InvalidKeyException | ErrorResponseException | InternalException | InvalidResponseException | ServerException e) {
             throw new org.poem.excception.MinioException("Error while fetching files in Minio", e);
         }
     }
@@ -210,18 +205,18 @@ public class MinioService {
     /**
      * Upload a file to Minio
      *
-     * @param source      Path with prefix to the object. Object name must be included.
-     * @param file        File as an inputstream
-     * @param headers     Additional headers to put on the file. The map MUST be mutable. All custom headers will start with 'x-amz-meta-' prefix when fetched with {@code getMetadata()} method.
+     * @param source  Path with prefix to the object. Object name must be included.
+     * @param file    File as an inputstream
+     * @param headers Additional headers to put on the file. The map MUST be mutable. All custom headers will start with 'x-amz-meta-' prefix when fetched with {@code getMetadata()} method.
      * @throws org.poem.excception.MinioException if an error occur while uploading object
      */
     public void upload(Path source, InputStream file, Map<String, String> headers) throws
-        org.poem.excception.MinioException {
+            org.poem.excception.MinioException {
         try {
             PutObjectOptions options = new PutObjectOptions(file.available(), -1);
             options.setHeaders(headers);
             minioClient.putObject(configurationProperties.getBucket(), source.toString(), file, options);
-        } catch (XmlParserException | InvalidBucketNameException | NoSuchAlgorithmException | InsufficientDataException | IOException | InvalidKeyException |  ErrorResponseException | InternalException  | InvalidResponseException e) {
+        } catch (XmlParserException | InvalidBucketNameException | NoSuchAlgorithmException | InsufficientDataException | IOException | InvalidKeyException | ErrorResponseException | InternalException | InvalidResponseException | ServerException e) {
             throw new org.poem.excception.MinioException("Error while fetching files in Minio", e);
         }
     }
@@ -229,15 +224,15 @@ public class MinioService {
     /**
      * Upload a file to Minio
      *
-     * @param source      Path with prefix to the object. Object name must be included.
-     * @param file        File as an inputstream
+     * @param source Path with prefix to the object. Object name must be included.
+     * @param file   File as an inputstream
      * @throws org.poem.excception.MinioException if an error occur while uploading object
      */
     public void upload(Path source, InputStream file) throws
-        org.poem.excception.MinioException {
+            org.poem.excception.MinioException {
         try {
-            minioClient.putObject(configurationProperties.getBucket(), source.toString(), file, new PutObjectOptions(file.available(),-1));
-        } catch (XmlParserException | InvalidBucketNameException | NoSuchAlgorithmException | InsufficientDataException | IOException | InvalidKeyException |  ErrorResponseException | InternalException  | InvalidResponseException e) {
+            minioClient.putObject(configurationProperties.getBucket(), source.toString(), file, new PutObjectOptions(file.available(), -1));
+        } catch (XmlParserException | InvalidBucketNameException | NoSuchAlgorithmException | InsufficientDataException | IOException | InvalidKeyException | ErrorResponseException | InternalException | InvalidResponseException | ServerException e) {
             throw new org.poem.excception.MinioException("Error while fetching files in Minio", e);
         }
     }
@@ -252,13 +247,13 @@ public class MinioService {
      * @throws org.poem.excception.MinioException if an error occur while uploading object
      */
     public void upload(Path source, InputStream file, String contentType, Map<String, String> headers) throws
-        org.poem.excception.MinioException {
+            org.poem.excception.MinioException {
         try {
             PutObjectOptions options = new PutObjectOptions(file.available(), -1);
             options.setContentType(contentType);
             options.setHeaders(headers);
             minioClient.putObject(configurationProperties.getBucket(), source.toString(), file, options);
-        } catch (XmlParserException | InvalidBucketNameException | NoSuchAlgorithmException | InsufficientDataException | IOException | InvalidKeyException |  ErrorResponseException | InternalException  | InvalidResponseException e) {
+        } catch (XmlParserException | InvalidBucketNameException | NoSuchAlgorithmException | InsufficientDataException | IOException | InvalidKeyException | ErrorResponseException | InternalException | InvalidResponseException | ServerException e) {
             throw new org.poem.excception.MinioException("Error while fetching files in Minio", e);
         }
     }
@@ -272,12 +267,12 @@ public class MinioService {
      * @throws org.poem.excception.MinioException if an error occur while uploading object
      */
     public void upload(Path source, InputStream file, String contentType) throws
-        org.poem.excception.MinioException {
+            org.poem.excception.MinioException {
         try {
             PutObjectOptions options = new PutObjectOptions(file.available(), -1);
             options.setContentType(contentType);
             minioClient.putObject(configurationProperties.getBucket(), source.toString(), file, options);
-        } catch (XmlParserException | InvalidBucketNameException | NoSuchAlgorithmException | InsufficientDataException | IOException | InvalidKeyException |  ErrorResponseException | InternalException  | InvalidResponseException e) {
+        } catch (XmlParserException | InvalidBucketNameException | NoSuchAlgorithmException | InsufficientDataException | IOException | InvalidKeyException | ErrorResponseException | InternalException | InvalidResponseException | ServerException e) {
             throw new org.poem.excception.MinioException("Error while fetching files in Minio", e);
         }
     }
@@ -285,15 +280,16 @@ public class MinioService {
     /**
      * Upload a file to Minio
      * upload file bigger than Xmx size
-     * @param source      Path with prefix to the object. Object name must be included.
-     * @param file        File as an Filename
+     *
+     * @param source Path with prefix to the object. Object name must be included.
+     * @param file   File as an Filename
      * @throws org.poem.excception.MinioException if an error occur while uploading object
      */
-    public void upload(Path source, File file,int partSize) throws
+    public void upload(Path source, File file, int partSize) throws
             org.poem.excception.MinioException {
         try {
-            minioClient.putObject(configurationProperties.getBucket(), source.toString(), file.getAbsolutePath(),new PutObjectOptions(Files.size(file.toPath()),partSize));
-        } catch (XmlParserException | InvalidBucketNameException | NoSuchAlgorithmException | InsufficientDataException | IOException | InvalidKeyException |  ErrorResponseException | InternalException  | InvalidResponseException e) {
+            minioClient.putObject(configurationProperties.getBucket(), source.toString(), file.getAbsolutePath(), new PutObjectOptions(Files.size(file.toPath()), partSize));
+        } catch (XmlParserException | InvalidBucketNameException | NoSuchAlgorithmException | InsufficientDataException | IOException | InvalidKeyException | ErrorResponseException | InternalException | InvalidResponseException | ServerException e) {
             throw new org.poem.excception.MinioException("Error while fetching files in Minio", e);
         }
     }
@@ -308,7 +304,7 @@ public class MinioService {
     public void remove(Path source) throws org.poem.excception.MinioException {
         try {
             minioClient.removeObject(configurationProperties.getBucket(), source.toString());
-        } catch (XmlParserException | InvalidBucketNameException | NoSuchAlgorithmException | InsufficientDataException | IOException | InvalidKeyException |  ErrorResponseException | InternalException  | InvalidResponseException e) {
+        } catch (XmlParserException | InvalidBucketNameException | NoSuchAlgorithmException | InsufficientDataException | IOException | InvalidKeyException | ErrorResponseException | InternalException | InvalidResponseException | ServerException e) {
             throw new MinioException("Error while fetching files in Minio", e);
         }
     }

@@ -22,6 +22,11 @@ package org.poem.excception;
  * @author Jordan LEFEBURE
  */
 public class MinioException extends Exception {
+    /**
+     * this exception
+     * @param message
+     * @param cause
+     */
     public MinioException(String message, Throwable cause) {
         super(message, cause);
     }
